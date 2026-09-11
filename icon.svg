@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Zip It!">
+  <rect width="512" height="512" fill="#AEDDF5"/>
+
+  <!-- clouds -->
+  <g fill="#FFFFFF">
+    <rect x="169.1" y="173.0" width="42.5" height="17.0" rx="8.5"/>
+    <circle cx="179.3" cy="181.5" r="10.2"/>
+    <circle cx="190.4" cy="177.2" r="8.5"/>
+    <circle cx="201.4" cy="183.2" r="7.6"/>
+    <rect x="310.9" y="168.6" width="27.5" height="11.0" rx="5.5"/>
+    <circle cx="318.0" cy="174.1" r="6.6"/>
+    <circle cx="330.1" cy="173.0" r="5.0"/>
+    <rect x="150.5" y="297.2" width="40.0" height="16.0" rx="8.0"/>
+    <circle cx="160.1" cy="305.2" r="9.6"/>
+    <circle cx="170.5" cy="301.2" r="8.0"/>
+    <circle cx="180.9" cy="306.8" r="7.2"/>
+    <rect x="337.6" y="301.1" width="25.0" height="10.0" rx="5.0"/>
+    <circle cx="345.1" cy="307.1" r="5.0"/>
+    <circle cx="355.6" cy="305.1" r="5.5"/>
+    <rect x="270.7" y="351.4" width="35.0" height="14.0" rx="7.0"/>
+    <circle cx="279.1" cy="358.4" r="8.4"/>
+    <circle cx="288.2" cy="354.9" r="7.0"/>
+    <circle cx="297.3" cy="359.8" r="6.3"/>
+    <rect x="177.7" y="336.1" width="27.5" height="11.0" rx="5.5"/>
+    <circle cx="184.9" cy="341.6" r="6.6"/>
+    <circle cx="197.0" cy="340.5" r="5.0"/>
+  </g>
+
+  <!-- suitcase -->
+  <rect x="230.8" y="178.6" width="9.6" height="36.0" rx="4.8" fill="#2B2F33"/>
+  <rect x="271.6" y="178.6" width="9.6" height="36.0" rx="4.8" fill="#2B2F33"/>
+  <rect x="226.0" y="176.2" width="60.0" height="12.0" rx="6.0" fill="#2B2F33"/>
+  <rect x="204.4" y="217.0" width="103.2" height="105.6" rx="14.4" fill="#4A90D9"/>
+  <rect x="215.2" y="250.6" width="81.6" height="52.8" rx="10.8" fill="#3B76B8"/>
+  <rect x="204.4" y="239.8" width="103.2" height="4.8" rx="0.0" fill="#3B76B8"/>
+  <rect x="300.4" y="248.2" width="18.0" height="13.2" rx="3.6" fill="#F0C34A"/>
+  <circle cx="224.8" cy="327.4" r="8.4" fill="#2B2F33"/>
+  <circle cx="287.2" cy="327.4" r="8.4" fill="#2B2F33"/>
+  <circle cx="304.0" cy="254.8" r="1.8" fill="#AEDDF5"/>
+</svg>
