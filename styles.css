@@ -391,10 +391,10 @@ details.more[open] summary:before{content:"– ";}
 .tutorial-dot.active{background:var(--accent);}
 .tutorial-nav-right{display:flex;gap:8px;align-items:center;}
 
-/* ---------- Destinations (Base List) ---------- */
-.destinations-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:16px;padding:14px 16px 16px;}
-.destinations-card header{padding:0 0 10px;border:none;}
-.destinations-card header h2{font-size:17px;font-weight:600;}
+/* ---------- Destinations / Trip Types (Base List) ---------- */
+.tag-manage-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:16px;padding:14px 16px 16px;}
+.tag-manage-card header{padding:0 0 10px;border:none;}
+.tag-manage-card header h2{font-size:17px;font-weight:600;}
 .removable-chip{display:inline-flex;align-items:center;gap:6px;cursor:default;}
 .chip-remove{border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;padding:0;line-height:1;opacity:.7;}
 .chip-remove:hover{opacity:1;color:var(--critical);}
