@@ -1016,7 +1016,7 @@ var TUTORIAL_STEPS = [
   {
     icon: '🗺️',
     title: '5. Plan a trip',
-    body: 'Switch to Trips, set a start date and length, then pick a destination and trip types. Your tagged items appear automatically — check them off as you pack.',
+    body: 'Switch to Trips, set a start date and length, then pick a destination and trip types. Your tagged items appear automatically — check them off as you pack. Save it under Saved Trips to plan more than one trip at a time.',
     illustration: function(){
       var cb = el('input', { type: 'checkbox', checked: 'checked', disabled: 'disabled' });
       return el('div', { class: 'item-row tutorial-illustration' }, [
