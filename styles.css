@@ -385,7 +385,7 @@ details.more[open] summary:before{content:"– ";}
 .tutorial-illustration{margin-top:6px;width:100%;pointer-events:none;}
 .tutorial-illustration.item-list{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-alt);}
 .tutorial-illustration.chip-row{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;}
-label.tutorial-illustration{justify-content:center;padding:10px 14px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-alt);}
+.tutorial-illustration.item-row{justify-content:center;padding:10px 14px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-alt);}
 .tutorial-dots{display:flex;justify-content:center;gap:6px;padding:16px 0 4px;}
 .tutorial-dot{width:7px;height:7px;border-radius:50%;background:var(--line);}
 .tutorial-dot.active{background:var(--accent);}

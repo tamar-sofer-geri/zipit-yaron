@@ -934,9 +934,22 @@ var TUTORIAL_STEPS = [
     body: 'A packing checklist that scales with your trip. Four quick steps and you’ll have your own list ready to go.'
   },
   {
+    icon: '📍',
+    title: '1. Add your destinations',
+    body: 'Open the Base List tab and use the Destinations card to add the places you’re going — tap “+ Add destination.” Do this first, so you can tag each item as you add it instead of going back later.',
+    illustration: function(){
+      var wrap = el('div', { class: 'tutorial-illustration chip-row' }, [
+        el('span', { class: 'chip chip-sm', text: 'Israel' }),
+        el('span', { class: 'chip chip-sm chip-add', text: '+ Add destination' })
+      ]);
+      wrap.style.pointerEvents = 'none';
+      return wrap;
+    }
+  },
+  {
     icon: '📝',
-    title: '1. Build your Base List',
-    body: 'Open the Base List tab and tap “+ Add item” under any category. Set how much you need — a fixed amount, or a rate per day for things like socks. Long-press a category name to collapse or expand it.',
+    title: '2. Build your Base List',
+    body: 'Next, tap “+ Add item” under any category to build out your list. Set how much you need — a fixed amount, or a rate per day for things like socks. Long-press a category name to collapse or expand it.',
     illustration: function(){
       var row = el('li', { class: 'item-row' }, [
         el('span', { class: 'drag-handle', text: '⠿' }),
@@ -949,19 +962,6 @@ var TUTORIAL_STEPS = [
       ]);
       row.style.pointerEvents = 'none';
       return el('ul', { class: 'tutorial-illustration item-list' }, [row]);
-    }
-  },
-  {
-    icon: '📍',
-    title: '2. Add your destinations',
-    body: 'Also on the Base List tab, use the Destinations card to add the places you travel to — tap “+ Add destination.” You’ll pick from these next when tagging items.',
-    illustration: function(){
-      var wrap = el('div', { class: 'tutorial-illustration chip-row' }, [
-        el('span', { class: 'chip chip-sm', text: 'Israel' }),
-        el('span', { class: 'chip chip-sm chip-add', text: '+ Add destination' })
-      ]);
-      wrap.style.pointerEvents = 'none';
-      return wrap;
     }
   },
   {
@@ -984,11 +984,11 @@ var TUTORIAL_STEPS = [
     title: '4. Plan a trip',
     body: 'Switch to Trips, set a start date and length, then pick a destination and trip types. Your tagged items appear automatically — check them off as you pack.',
     illustration: function(){
-      var row = el('label', { class: 'check tutorial-illustration' }, [
-        el('input', { type: 'checkbox', checked: 'checked', disabled: 'disabled' }),
-        el('span', { text: 'Sunscreen' })
+      var cb = el('input', { type: 'checkbox', checked: 'checked', disabled: 'disabled' });
+      return el('div', { class: 'item-row tutorial-illustration' }, [
+        el('label', { class: 'check' }, [ cb, el('span', {}) ]),
+        el('span', { class: 'item-name', text: 'Sunscreen' })
       ]);
-      return row;
     }
   },
   {
