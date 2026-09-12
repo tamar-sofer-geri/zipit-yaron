@@ -1038,9 +1038,51 @@ function markTutorialSeen(){
   try { localStorage.setItem(STORAGE_KEY + '-tutorial-seen', '1'); } catch (e){}
 }
 
+var tutorialSwipeAttached = false;
+
+function attachTutorialSwipe(){
+  if (tutorialSwipeAttached) return;
+  tutorialSwipeAttached = true;
+  var dialog = document.getElementById('tutorial-dialog');
+  var startX = 0, startY = 0, dragging = false, decided = false, isHorizontal = false;
+
+  dialog.addEventListener('pointerdown', function(e){
+    if (e.target.closest('button')) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    startX = e.clientX; startY = e.clientY; dragging = true; decided = false; isHorizontal = false;
+  });
+  dialog.addEventListener('pointermove', function(e){
+    if (!dragging) return;
+    var moveX = e.clientX - startX, moveY = e.clientY - startY;
+    if (!decided){
+      if (Math.abs(moveX) < 8 && Math.abs(moveY) < 8) return;
+      decided = true;
+      isHorizontal = Math.abs(moveX) > Math.abs(moveY);
+    }
+    if (isHorizontal) e.preventDefault();
+  });
+  function endDrag(e){
+    if (!dragging) return;
+    dragging = false;
+    if (!isHorizontal) return;
+    var moveX = e.clientX - startX;
+    var THRESHOLD = 40;
+    if (moveX <= -THRESHOLD && tutorialStepIndex < TUTORIAL_STEPS.length - 1){
+      tutorialStepIndex++;
+      renderTutorialStep('next');
+    } else if (moveX >= THRESHOLD && tutorialStepIndex > 0){
+      tutorialStepIndex--;
+      renderTutorialStep('back');
+    }
+  }
+  dialog.addEventListener('pointerup', endDrag);
+  dialog.addEventListener('pointercancel', endDrag);
+}
+
 function showTutorial(){
   tutorialStepIndex = 0;
   renderTutorialStep();
+  attachTutorialSwipe();
   document.getElementById('tutorial-dialog').showModal();
 }
 
@@ -1049,11 +1091,10 @@ function closeTutorial(){
   document.getElementById('tutorial-dialog').close();
 }
 
-function renderTutorialStep(){
+function renderTutorialStep(direction){
   var dialog = document.getElementById('tutorial-dialog');
   var step = TUTORIAL_STEPS[tutorialStepIndex];
   var isLast = tutorialStepIndex === TUTORIAL_STEPS.length - 1;
-  var isFirst = tutorialStepIndex === 0;
 
   dialog.innerHTML = '';
 
@@ -1071,18 +1112,7 @@ function renderTutorialStep(){
   var footer = el('div', { class: 'dialog-footer' }, [
     el('button', { class: 'btn ghost', type: 'button', text: isLast ? '' : 'Skip', onclick: closeTutorial }),
     el('div', { class: 'tutorial-nav-right' }, [
-      isFirst ? null : el('button', {
-        class: 'btn ghost', type: 'button', text: 'Back',
-        onclick: function(){ tutorialStepIndex--; renderTutorialStep(); }
-      }),
-      el('button', {
-        class: 'btn primary', type: 'button', text: isLast ? 'Get started' : 'Next',
-        onclick: function(){
-          if (isLast) { closeTutorial(); return; }
-          tutorialStepIndex++;
-          renderTutorialStep();
-        }
-      })
+      isLast ? el('button', { class: 'btn primary', type: 'button', text: 'Get started', onclick: closeTutorial }) : null
     ].filter(Boolean))
   ]);
   if (isLast) footer.firstChild.style.visibility = 'hidden';
@@ -1090,6 +1120,16 @@ function renderTutorialStep(){
   dialog.appendChild(body);
   dialog.appendChild(dots);
   dialog.appendChild(footer);
+
+  if (direction){
+    body.style.transform = 'translateX(' + (direction === 'next' ? '24px' : '-24px') + ')';
+    body.style.opacity = '0';
+    requestAnimationFrame(function(){
+      body.style.transition = 'transform .2s ease, opacity .2s ease';
+      body.style.transform = 'translateX(0)';
+      body.style.opacity = '1';
+    });
+  }
 }
 
 function updateProgress(){
