@@ -375,3 +375,18 @@ details.more[open] summary:before{content:"– ";}
 .rule-card-footer{display:flex;justify-content:space-between;align-items:center;margin-top:8px;}
 
 .empty-hint{color:var(--muted);font-size:15px;padding:24px;text-align:center;}
+
+/* ---------- Tutorial ---------- */
+.tutorial-dialog{width:min(380px,90vw);}
+.tutorial-body{padding:28px 24px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;}
+.tutorial-body h2{font-size:21px;}
+.tutorial-icon{font-size:44px;line-height:1;}
+.tutorial-body .confirm-message{text-align:center;}
+.tutorial-illustration{margin-top:6px;width:100%;pointer-events:none;}
+.tutorial-illustration.item-list{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-alt);}
+.tutorial-illustration.chip-row{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;}
+label.tutorial-illustration{justify-content:center;padding:10px 14px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-alt);}
+.tutorial-dots{display:flex;justify-content:center;gap:6px;padding:16px 0 4px;}
+.tutorial-dot{width:7px;height:7px;border-radius:50%;background:var(--line);}
+.tutorial-dot.active{background:var(--accent);}
+.tutorial-nav-right{display:flex;gap:8px;align-items:center;}

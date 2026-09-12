@@ -904,6 +904,126 @@ function showConfirm(message, confirmLabel, onConfirm){
   dialog.showModal();
 }
 
+// ---------- Tutorial ----------
+
+var TUTORIAL_STEPS = [
+  {
+    icon: '🧳',
+    title: 'Welcome to Zip It!',
+    body: 'A packing checklist that scales with your trip. Three quick steps and you’ll have your own list ready to go.'
+  },
+  {
+    icon: '📝',
+    title: '1. Build your Base List',
+    body: 'Open the Base List tab and tap “+ Add item” under any category. Set how much you need — a fixed amount, or a rate per day for things like socks.',
+    illustration: function(){
+      var row = el('li', { class: 'item-row' }, [
+        el('span', { class: 'drag-handle', text: '⠿' }),
+        el('span', { class: 'item-name', text: 'Toothbrush' }, undefined),
+        el('div', { class: 'qty-control' }, [
+          el('button', { type: 'button', text: '−' }),
+          el('span', { class: 'mono', text: '1' }),
+          el('button', { type: 'button', text: '+' })
+        ])
+      ]);
+      row.style.pointerEvents = 'none';
+      return el('ul', { class: 'tutorial-illustration item-list' }, [row]);
+    }
+  },
+  {
+    icon: '🏷️',
+    title: '2. Tag what it’s for',
+    body: 'Tap an item to open it, then pick which destinations and trip types it applies to. Only tagged items show up automatically for a matching trip — untagged ones stay out of the way.',
+    illustration: function(){
+      var wrap = el('div', { class: 'tutorial-illustration chip-row' }, [
+        el('span', { class: 'chip toggle selected', text: 'Hot' }),
+        el('span', { class: 'chip toggle', text: 'Cold' }),
+        el('span', { class: 'chip toggle selected', text: 'Beach' }),
+        el('span', { class: 'chip toggle', text: 'City' })
+      ]);
+      wrap.style.pointerEvents = 'none';
+      return wrap;
+    }
+  },
+  {
+    icon: '🗺️',
+    title: '3. Plan a trip',
+    body: 'Switch to Trips, set a start date and length, then pick a destination and trip types. Your tagged items appear automatically — check them off as you pack.',
+    illustration: function(){
+      var row = el('label', { class: 'check tutorial-illustration' }, [
+        el('input', { type: 'checkbox', checked: 'checked', disabled: 'disabled' }),
+        el('span', { text: 'Sunscreen' })
+      ]);
+      return row;
+    }
+  },
+  {
+    icon: '🎉',
+    title: 'You’re all set!',
+    body: 'Add a few items, tag them, then start your first trip. You can replay this walkthrough anytime from the Base List tab.'
+  }
+];
+
+var tutorialStepIndex = 0;
+
+function markTutorialSeen(){
+  try { localStorage.setItem(STORAGE_KEY + '-tutorial-seen', '1'); } catch (e){}
+}
+
+function showTutorial(){
+  tutorialStepIndex = 0;
+  renderTutorialStep();
+  document.getElementById('tutorial-dialog').showModal();
+}
+
+function closeTutorial(){
+  markTutorialSeen();
+  document.getElementById('tutorial-dialog').close();
+}
+
+function renderTutorialStep(){
+  var dialog = document.getElementById('tutorial-dialog');
+  var step = TUTORIAL_STEPS[tutorialStepIndex];
+  var isLast = tutorialStepIndex === TUTORIAL_STEPS.length - 1;
+  var isFirst = tutorialStepIndex === 0;
+
+  dialog.innerHTML = '';
+
+  var dots = el('div', { class: 'tutorial-dots' }, TUTORIAL_STEPS.map(function(s, i){
+    return el('span', { class: 'tutorial-dot' + (i === tutorialStepIndex ? ' active' : '') });
+  }));
+
+  var body = el('div', { class: 'tutorial-body' }, [
+    el('div', { class: 'tutorial-icon', text: step.icon }),
+    el('h2', { text: step.title }),
+    el('p', { class: 'confirm-message', text: step.body }),
+    step.illustration ? step.illustration() : null
+  ]);
+
+  var footer = el('div', { class: 'dialog-footer' }, [
+    el('button', { class: 'btn ghost', type: 'button', text: isLast ? '' : 'Skip', onclick: closeTutorial }),
+    el('div', { class: 'tutorial-nav-right' }, [
+      isFirst ? null : el('button', {
+        class: 'btn ghost', type: 'button', text: 'Back',
+        onclick: function(){ tutorialStepIndex--; renderTutorialStep(); }
+      }),
+      el('button', {
+        class: 'btn primary', type: 'button', text: isLast ? 'Get started' : 'Next',
+        onclick: function(){
+          if (isLast) { closeTutorial(); return; }
+          tutorialStepIndex++;
+          renderTutorialStep();
+        }
+      })
+    ].filter(Boolean))
+  ]);
+  if (isLast) footer.firstChild.style.visibility = 'hidden';
+
+  dialog.appendChild(body);
+  dialog.appendChild(dots);
+  dialog.appendChild(footer);
+}
+
 function updateProgress(){
   var rows = document.querySelectorAll('#checklist .item-row[data-id]');
   var total = rows.length, done = 0;
@@ -1288,6 +1408,7 @@ function renderBaseList(){
 
   view.appendChild(el('div', { class: 'toolbar' }, [
     el('button', { class: 'btn ghost', type: 'button', text: 'Reset base list to defaults', onclick: resetToDefaults }),
+    el('button', { class: 'btn ghost', type: 'button', text: '🎓 How it works', onclick: function(){ showTutorial(); } }),
     el('span', { class: 'status-msg', text: 'Changes save automatically on this device.' })
   ]));
 
@@ -1559,7 +1680,8 @@ function boot(){
     '<dialog id="item-dialog" class="item-dialog"></dialog>' +
     '<dialog id="prompt-dialog" class="item-dialog prompt-dialog"></dialog>' +
     '<dialog id="celebrate-dialog" class="celebrate-dialog"></dialog>' +
-    '<dialog id="weather-dialog" class="item-dialog weather-dialog"></dialog>';
+    '<dialog id="weather-dialog" class="item-dialog weather-dialog"></dialog>' +
+    '<dialog id="tutorial-dialog" class="item-dialog tutorial-dialog"></dialog>';
 
   document.querySelectorAll('.tab').forEach(function(b){
     b.addEventListener('click', function(){ switchTab(b.getAttribute('data-tab')); });
@@ -1575,6 +1697,11 @@ function boot(){
   renderSyncStatus();
   initCloud();
   armBackGuard();
+
+  var tutorialSeenKey = STORAGE_KEY + '-tutorial-seen';
+  var tutorialSeen = false;
+  try { tutorialSeen = localStorage.getItem(tutorialSeenKey) === '1'; } catch (e){}
+  if (!tutorialSeen) showTutorial();
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
