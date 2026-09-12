@@ -1763,7 +1763,7 @@ function boot(){
   var root = document.getElementById('root');
   root.innerHTML =
     '<header class="topbar">' +
-      '<div class="brand"><span class="brand-mark">🧳</span><div><h1>Zip It!</h1><p class="eyebrow">packing, calculated</p></div></div>' +
+      '<div class="brand"><img class="brand-mark" src="icon.svg?v=9" alt="Zip It!" /><div><h1>Zip It!</h1><p class="eyebrow">packing, calculated</p></div></div>' +
       '<nav class="tabs" role="tablist">' +
         '<button class="tab active" data-tab="plan">Trips</button>' +
         '<button class="tab" data-tab="plans">Saved Trips</button>' +
