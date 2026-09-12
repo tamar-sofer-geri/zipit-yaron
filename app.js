@@ -952,7 +952,7 @@ var TUTORIAL_STEPS = [
   {
     icon: '🧳',
     title: 'Welcome to Zip It!',
-    body: 'A packing checklist that scales with your trip. Four quick steps and you’ll have your own list ready to go.'
+    body: 'A packing checklist that scales with your trip. Five quick steps and you’ll have your own list ready to go.'
   },
   {
     icon: '📍',
@@ -968,8 +968,21 @@ var TUTORIAL_STEPS = [
     }
   },
   {
+    icon: '🧭',
+    title: '2. Set up your trip types',
+    body: 'Right below Destinations, the Trip Types card works the same way — tap “+ Add trip type” for categories like Hot, Beach, or Business. Set these up alongside destinations before you start tagging items.',
+    illustration: function(){
+      var wrap = el('div', { class: 'tutorial-illustration chip-row' }, [
+        el('span', { class: 'chip chip-sm', text: 'Hot' }),
+        el('span', { class: 'chip chip-sm chip-add', text: '+ Add trip type' })
+      ]);
+      wrap.style.pointerEvents = 'none';
+      return wrap;
+    }
+  },
+  {
     icon: '📝',
-    title: '2. Build your Base List',
+    title: '3. Build your Base List',
     body: 'Next, tap “+ Add item” under any category to build out your list. Set how much you need — a fixed amount, or a rate per day for things like socks. Long-press a category name to collapse or expand it.',
     illustration: function(){
       var row = el('li', { class: 'item-row' }, [
@@ -987,7 +1000,7 @@ var TUTORIAL_STEPS = [
   },
   {
     icon: '🏷️',
-    title: '3. Tag what it’s for',
+    title: '4. Tag what it’s for',
     body: 'Choose the destinations and trip types that apply to the item. Only tagged items show up automatically for a matching trip — untagged ones stay out of the way.',
     illustration: function(){
       var wrap = el('div', { class: 'tutorial-illustration chip-row' }, [
@@ -1002,7 +1015,7 @@ var TUTORIAL_STEPS = [
   },
   {
     icon: '🗺️',
-    title: '4. Plan a trip',
+    title: '5. Plan a trip',
     body: 'Switch to Trips, set a start date and length, then pick a destination and trip types. Your tagged items appear automatically — check them off as you pack.',
     illustration: function(){
       var cb = el('input', { type: 'checkbox', checked: 'checked', disabled: 'disabled' });
