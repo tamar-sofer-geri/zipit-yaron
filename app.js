@@ -719,6 +719,27 @@ function addDestination(onAdded){
   });
 }
 
+function deleteDestination(key){
+  var dest = STATE.destinations.filter(function(d){ return d.key === key; })[0];
+  if (!dest) return;
+  showConfirm('Delete destination "' + dest.label + '"? It will be removed from any items tagged with it.', 'Delete', function(){
+    STATE.destinations = STATE.destinations.filter(function(d){ return d.key !== key; });
+    STATE.items.forEach(function(it){
+      if (it.tags) it.tags = it.tags.filter(function(t){ return t !== key; });
+    });
+    persist();
+    renderBaseList();
+  });
+}
+
+function deleteBaseListItem(item){
+  showConfirm('Delete "' + (item.name || 'this item') + '" from the base list? This can\'t be undone.', 'Delete', function(){
+    STATE.items = STATE.items.filter(function(it){ return it.id !== item.id; });
+    persist();
+    renderBaseList();
+  });
+}
+
 function adjustQty(id, delta){
   var item = itemById(id);
   var current = manualOverrides.hasOwnProperty(id) ? manualOverrides[id] : computeItem(item).qty;
@@ -1412,6 +1433,25 @@ function renderBaseList(){
     el('span', { class: 'status-msg', text: 'Changes save automatically on this device.' })
   ]));
 
+  var destChips = STATE.destinations.map(function(d){
+    return el('span', { class: 'chip chip-sm removable-chip' }, [
+      el('span', { text: d.label }),
+      el('button', {
+        type: 'button', class: 'chip-remove', title: 'Remove destination',
+        onclick: function(e){ e.stopPropagation(); deleteDestination(d.key); },
+        text: '✕'
+      })
+    ]);
+  });
+  destChips.push(el('button', {
+    type: 'button', class: 'chip chip-sm chip-add', text: '+ Add destination',
+    onclick: function(){ addDestination(function(){ persist(); renderBaseList(); }); }
+  }));
+  view.appendChild(el('div', { class: 'edit-card destinations-card' }, [
+    el('header', {}, [ el('h2', { text: 'Destinations' }) ]),
+    el('div', { class: 'chip-group destinations-chip-group' }, destChips)
+  ]));
+
   STATE.categories.forEach(function(cat){
     var catItems = STATE.items.filter(function(it){ return it.category === cat; });
     var isCollapsed = !!collapsedBaseList[cat];
@@ -1445,6 +1485,66 @@ function renderBaseList(){
   });
 }
 
+var openSwipeRow = null;
+
+function attachSwipeToDelete(rowEl, contentEl, onTap){
+  var OPEN_X = 76;
+  var startX = 0, startY = 0, dx = 0, dragging = false, decided = false, isHorizontal = false, open = false;
+
+  function setX(x, animate){
+    contentEl.style.transition = animate ? 'transform .18s ease' : 'none';
+    contentEl.style.transform = 'translateX(' + x + 'px)';
+  }
+  function close(animate){
+    setX(0, animate !== false);
+    open = false;
+    if (openSwipeRow === closer) openSwipeRow = null;
+  }
+  var closer = { close: close };
+
+  rowEl.addEventListener('pointerdown', function(e){
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    startX = e.clientX; startY = e.clientY; dx = 0; dragging = true; decided = false; isHorizontal = false;
+  });
+  rowEl.addEventListener('pointermove', function(e){
+    if (!dragging) return;
+    var moveX = e.clientX - startX, moveY = e.clientY - startY;
+    if (!decided){
+      if (Math.abs(moveX) < 8 && Math.abs(moveY) < 8) return;
+      decided = true;
+      isHorizontal = Math.abs(moveX) > Math.abs(moveY);
+      if (isHorizontal){
+        try { rowEl.setPointerCapture(e.pointerId); } catch (err){}
+        if (openSwipeRow && openSwipeRow !== closer) openSwipeRow.close();
+      }
+    }
+    if (!isHorizontal) return;
+    e.preventDefault();
+    dx = moveX;
+    var base = open ? OPEN_X : 0;
+    setX(Math.max(0, Math.min(OPEN_X, base + dx)), false);
+  });
+  function endDrag(){
+    if (!dragging) return;
+    dragging = false;
+    if (!isHorizontal) return;
+    var base = open ? OPEN_X : 0;
+    var finalX = Math.max(0, Math.min(OPEN_X, base + dx));
+    if (finalX >= OPEN_X / 2){
+      setX(OPEN_X, true); open = true; openSwipeRow = closer;
+    } else {
+      close(true);
+    }
+  }
+  rowEl.addEventListener('pointerup', endDrag);
+  rowEl.addEventListener('pointercancel', endDrag);
+
+  contentEl.addEventListener('click', function(e){
+    if (open){ e.preventDefault(); e.stopPropagation(); close(true); return; }
+    onTap();
+  });
+}
+
 function renderItemSummaryRow(item){
   if (!item.tags) item.tags = [];
   var modeMeta = item.mode === 'fixed' ? ('Fixed · ' + item.qty)
@@ -1454,13 +1554,24 @@ function renderItemSummaryRow(item){
   if (item.tags.length){
     metaParts.push(item.tags.map(tagLabel).join(', '));
   }
-  var row = el('li', { class: 'item-row edit-summary-row', onclick: function(){ openItemEditor(item); } }, [
+
+  var content = el('div', { class: 'item-row-content' }, [
     el('div', { class: 'item-main' }, [
       el('span', { class: 'item-name', text: item.name }),
       el('span', { class: 'item-summary-meta', text: metaParts.join(' · ') })
     ]),
     el('span', { class: 'summary-arrow', text: '›' })
   ]);
+
+  var deleteAction = el('div', { class: 'swipe-delete-action' }, [
+    el('button', {
+      class: 'swipe-delete-btn', type: 'button', text: 'Delete',
+      onclick: function(e){ e.stopPropagation(); deleteBaseListItem(item); }
+    })
+  ]);
+
+  var row = el('li', { class: 'item-row edit-summary-row swipeable' }, [ deleteAction, content ]);
+  attachSwipeToDelete(row, content, function(){ openItemEditor(item); });
   return row;
 }
 
@@ -1557,14 +1668,7 @@ function openItemEditor(item, focusName){
   var footer = el('div', { class: 'dialog-footer' }, [
     el('button', {
       class: 'btn ghost', type: 'button', text: 'Delete item',
-      onclick: function(){
-        showConfirm('Delete "' + (item.name || 'this item') + '" from the base list? This can\'t be undone.', 'Delete', function(){
-          STATE.items = STATE.items.filter(function(it){ return it.id !== item.id; });
-          persist();
-          dialog.close();
-          renderBaseList();
-        });
-      }
+      onclick: function(){ dialog.close(); deleteBaseListItem(item); }
     }),
     el('button', { class: 'btn primary', type: 'button', text: 'Done', onclick: function(){ dialog.close(); renderBaseList(); } })
   ]);

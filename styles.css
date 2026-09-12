@@ -390,3 +390,25 @@ label.tutorial-illustration{justify-content:center;padding:10px 14px;border:1px 
 .tutorial-dot{width:7px;height:7px;border-radius:50%;background:var(--line);}
 .tutorial-dot.active{background:var(--accent);}
 .tutorial-nav-right{display:flex;gap:8px;align-items:center;}
+
+/* ---------- Destinations (Base List) ---------- */
+.destinations-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:16px;padding:14px 16px 16px;}
+.destinations-card header{padding:0 0 10px;border:none;}
+.destinations-card header h2{font-size:17px;font-weight:600;}
+.removable-chip{display:inline-flex;align-items:center;gap:6px;cursor:default;}
+.chip-remove{border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;padding:0;line-height:1;opacity:.7;}
+.chip-remove:hover{opacity:1;color:var(--critical);}
+
+/* ---------- Swipe to delete (Base List items) ---------- */
+.item-row.swipeable{padding:0;overflow:hidden;position:relative;}
+.item-row.swipeable:hover{background:none;}
+.item-row-content{
+  display:flex;align-items:center;gap:10px;padding:8px 8px;border-radius:8px;
+  background:var(--surface);position:relative;z-index:1;cursor:pointer;touch-action:pan-y;
+  width:100%;box-sizing:border-box;
+}
+.item-row.swipeable:hover .item-row-content{background:var(--surface-alt);}
+.swipe-delete-action{position:absolute;top:0;left:0;bottom:0;width:76px;display:flex;z-index:0;}
+.swipe-delete-btn{
+  flex:1;border:none;background:var(--critical);color:#fff;font-size:14px;font-weight:600;cursor:pointer;
+}
