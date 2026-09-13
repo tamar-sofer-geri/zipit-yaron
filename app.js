@@ -457,6 +457,13 @@ function addDaysToDate(date, n){
   return d;
 }
 
+function isPlanPast(plan){
+  if (!plan.startDate) return false;
+  var dayAfterTrip = addDaysToDate(parseISODate(plan.startDate), plan.days || 0);
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  return dayAfterTrip <= today;
+}
+
 function geocodeDestination(label){
   var url = 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(label) + '&count=10&language=en&format=json';
   return fetch(url).then(function(res){ return res.json(); }).then(function(data){
@@ -1614,8 +1621,9 @@ function renderBaseList(){
 
 var openSwipeRow = null;
 
-function attachSwipeToDelete(rowEl, contentEl, onTap){
+function attachSwipeToDelete(rowEl, contentEl, onTap, onFullSwipe){
   var OPEN_X = 76;
+  var FULL_SWIPE_RATIO = 0.6;
   var startX = 0, startY = 0, dx = 0, dragging = false, decided = false, isHorizontal = false, open = false;
 
   function setX(x, animate){
@@ -1649,15 +1657,20 @@ function attachSwipeToDelete(rowEl, contentEl, onTap){
     e.preventDefault();
     dx = moveX;
     var base = open ? OPEN_X : 0;
-    setX(Math.max(0, Math.min(OPEN_X, base + dx)), false);
+    var rowWidth = rowEl.getBoundingClientRect().width;
+    setX(Math.max(0, Math.min(rowWidth, base + dx)), false);
   });
   function endDrag(){
     if (!dragging) return;
     dragging = false;
     if (!isHorizontal) return;
     var base = open ? OPEN_X : 0;
-    var finalX = Math.max(0, Math.min(OPEN_X, base + dx));
-    if (finalX >= OPEN_X / 2){
+    var rowWidth = rowEl.getBoundingClientRect().width;
+    var finalX = Math.max(0, Math.min(rowWidth, base + dx));
+    if (finalX >= rowWidth * FULL_SWIPE_RATIO){
+      close(true);
+      onFullSwipe();
+    } else if (finalX >= OPEN_X / 2){
       setX(OPEN_X, true); open = true; openSwipeRow = closer;
     } else {
       close(true);
@@ -1698,7 +1711,7 @@ function renderItemSummaryRow(item){
   ]);
 
   var row = el('li', { class: 'item-row edit-summary-row swipeable' }, [ deleteAction, content ]);
-  attachSwipeToDelete(row, content, function(){ openItemEditor(item); });
+  attachSwipeToDelete(row, content, function(){ openItemEditor(item); }, function(){ deleteBaseListItem(item); });
   return row;
 }
 
@@ -1810,21 +1823,40 @@ function openItemEditor(item, focusName){
 
 // ---------- Rendering: Plans view ----------
 
+var viewingPastTrips = false;
+
 function renderPlans(){
   var view = document.getElementById('view-plans');
   view.innerHTML = '';
 
   view.appendChild(el('div', { class: 'toolbar' }, [
-    el('button', { class: 'btn', type: 'button', text: '+ New trip', onclick: newPlan })
+    el('button', { class: 'btn', type: 'button', text: '+ New trip', onclick: newPlan }),
+    el('button', {
+      class: 'btn ghost', type: 'button',
+      text: viewingPastTrips ? '◂ Upcoming trips' : 'Past trips',
+      onclick: function(){ viewingPastTrips = !viewingPastTrips; renderPlans(); }
+    })
   ]));
 
-  if (!STATE.savedPlans.length){
-    view.appendChild(el('div', { class: 'empty-hint', text: 'No saved trips yet. Set up a trip on Trips, then tap "Save trip…".' }));
+  var relevantPlans = STATE.savedPlans.filter(function(plan){
+    return isPlanPast(plan) === viewingPastTrips;
+  });
+
+  if (!relevantPlans.length){
+    view.appendChild(el('div', {
+      class: 'empty-hint',
+      text: viewingPastTrips ? 'No past trips yet.' : 'No saved trips yet. Set up a trip on Trips, then tap "Save trip…".'
+    }));
     return;
   }
 
-  STATE.savedPlans.slice().sort(function(a, b){
+  relevantPlans.slice().sort(function(a, b){
     var ad = a.startDate || '', bd = b.startDate || '';
+    if (viewingPastTrips){
+      if (ad && bd) return ad > bd ? -1 : ad < bd ? 1 : (b.updatedAt - a.updatedAt);
+      if (ad !== bd) return ad ? -1 : 1;
+      return b.updatedAt - a.updatedAt;
+    }
     if (ad && bd) return ad < bd ? -1 : ad > bd ? 1 : (b.updatedAt - a.updatedAt);
     if (ad !== bd) return ad ? -1 : 1;
     return b.updatedAt - a.updatedAt;
