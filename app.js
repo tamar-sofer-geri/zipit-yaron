@@ -2028,10 +2028,8 @@ function boot(){
   document.getElementById('item-dialog').addEventListener('close', function(){ renderBaseList(); });
   document.getElementById('settings-btn').addEventListener('click', openSettings);
 
-  if (!STATE.activePlanId){
-    var nextPlan = pickNextUpcomingPlan();
-    if (nextPlan) loadPlan(nextPlan.id);
-  }
+  var nextPlan = pickNextUpcomingPlan();
+  if (nextPlan && nextPlan.id !== STATE.activePlanId) loadPlan(nextPlan.id);
 
   renderPlan();
   renderBaseList();
