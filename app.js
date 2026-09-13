@@ -148,6 +148,9 @@ function rehydrateFromState(){
   STATE.collapsedPlan = collapsedPlan;
   STATE.collapsedBaseList = collapsedBaseList;
   if (STATE.activePlanId === undefined) STATE.activePlanId = null;
+  STATE.prefs = STATE.prefs || {};
+  if (!STATE.prefs.dateFormat) STATE.prefs.dateFormat = 'us';
+  if (!STATE.prefs.tempUnit) STATE.prefs.tempUnit = 'f';
 }
 rehydrateFromState();
 
@@ -411,11 +414,33 @@ function tagLabel(key){
   return t ? t.label : key;
 }
 
+var MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// Built by hand (not toLocaleDateString) so the month/day order reflects the
+// user's own US/European choice rather than whatever their browser's locale
+// happens to default to.
 function formatTripDate(iso){
   if (!iso) return '';
   var parts = iso.split('-');
-  var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  var y = Number(parts[0]), month = MONTH_ABBR[Number(parts[1]) - 1], d = Number(parts[2]);
+  return STATE.prefs.dateFormat === 'eu' ? (d + ' ' + month + ' ' + y) : (month + ' ' + d + ', ' + y);
+}
+
+// Weather is always fetched in Fahrenheit (see fetchWeatherOutlook) so the
+// packing-tip thresholds below stay correct regardless of display unit;
+// these only convert for display.
+function formatTemp(f){
+  if (f == null) return '';
+  if (STATE.prefs.tempUnit === 'c') return Math.round((f - 32) * 5 / 9) + '°C';
+  return f + '°F';
+}
+
+function formatTempRange(lowF, highF){
+  if (lowF == null || highF == null) return '';
+  if (STATE.prefs.tempUnit === 'c'){
+    return Math.round((lowF - 32) * 5 / 9) + '°–' + Math.round((highF - 32) * 5 / 9) + '°C';
+  }
+  return lowF + '°–' + highF + '°F';
 }
 
 // ---------- Weather & packing tips ----------
@@ -459,9 +484,18 @@ function addDaysToDate(date, n){
 
 function isPlanPast(plan){
   if (!plan.startDate) return false;
-  var dayAfterTrip = addDaysToDate(parseISODate(plan.startDate), plan.days || 0);
   var today = new Date(); today.setHours(0, 0, 0, 0);
-  return dayAfterTrip <= today;
+  return parseISODate(plan.startDate) < today;
+}
+
+function pickNextUpcomingPlan(){
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var candidates = STATE.savedPlans.filter(function(p){
+    return p.startDate && parseISODate(p.startDate) >= today;
+  });
+  if (!candidates.length) return null;
+  candidates.sort(function(a, b){ return a.startDate < b.startDate ? -1 : a.startDate > b.startDate ? 1 : 0; });
+  return candidates[0];
 }
 
 function geocodeDestination(label){
@@ -567,10 +601,10 @@ function getWeatherOutlook(){
 function buildPackingTips(outlook){
   var tips = [];
   if (outlook.highF != null && outlook.highF >= 85){
-    tips.push({ text: 'Highs near ' + outlook.highF + '°F — pack light, breathable clothing and extra sunscreen.', add: 'Extra sunscreen' });
+    tips.push({ text: 'Highs near ' + formatTemp(outlook.highF) + ' — pack light, breathable clothing and extra sunscreen.', add: 'Extra sunscreen' });
   }
   if (outlook.lowF != null && outlook.lowF <= 45){
-    tips.push({ text: 'Lows near ' + outlook.lowF + '°F — pack a warm jacket and layers.', add: 'Warm jacket' });
+    tips.push({ text: 'Lows near ' + formatTemp(outlook.lowF) + ' — pack a warm jacket and layers.', add: 'Warm jacket' });
   }
   if (outlook.rainPct != null && outlook.rainPct >= 40){
     var rainNote = outlook.mode === 'forecast'
@@ -614,7 +648,7 @@ function renderWeatherDialog(state){
       el('div', { class: 'weather-dates', text: formatTripDate(trip.startDate) + (endLabel ? ' – ' + endLabel : '') }),
       el('div', { class: 'weather-mode', text: outlook.mode === 'forecast' ? 'Forecast' : 'Typical for these dates, based on recent years' }),
       el('div', { class: 'weather-stats' }, [
-        (outlook.highF != null && outlook.lowF != null) ? el('span', { class: 'weather-stat', text: '🌡️ ' + outlook.lowF + '°–' + outlook.highF + '°F' }) : null,
+        (outlook.highF != null && outlook.lowF != null) ? el('span', { class: 'weather-stat', text: '🌡️ ' + formatTempRange(outlook.lowF, outlook.highF) }) : null,
         outlook.rainPct != null ? el('span', { class: 'weather-stat', text: '☔ ' + outlook.rainPct + '%' }) : null,
         outlook.windMph != null ? el('span', { class: 'weather-stat', text: '💨 ' + outlook.windMph + ' mph' }) : null
       ])
@@ -972,6 +1006,57 @@ function showConfirm(message, confirmLabel, onConfirm){
   dialog.appendChild(footer);
 
   dialog.showModal();
+}
+
+// ---------- Settings ----------
+
+function renderSettings(){
+  var dialog = document.getElementById('settings-dialog');
+  dialog.innerHTML = '';
+  dialog.appendChild(el('div', { class: 'dialog-header' }, [
+    el('h2', { text: 'Settings' }),
+    el('button', { class: 'icon-btn', type: 'button', text: '✕', title: 'Close', onclick: function(){ dialog.close(); } })
+  ]));
+
+  var body = el('div', { class: 'item-editor' });
+
+  function chipRow(current, options, onPick){
+    return el('div', { class: 'chip-group' }, options.map(function(opt){
+      return el('button', {
+        type: 'button', class: 'chip chip-sm' + (current === opt.value ? ' selected' : ''), text: opt.label,
+        onclick: function(){
+          onPick(opt.value);
+          persist();
+          renderPlan();
+          renderPlans();
+          renderSettings();
+        }
+      });
+    }));
+  }
+
+  body.appendChild(el('div', { class: 'field' }, [
+    el('label', { text: 'Date format' }),
+    chipRow(STATE.prefs.dateFormat, [
+      { value: 'us', label: 'Jun 1, 2027' },
+      { value: 'eu', label: '1 Jun 2027' }
+    ], function(v){ STATE.prefs.dateFormat = v; })
+  ]));
+
+  body.appendChild(el('div', { class: 'field' }, [
+    el('label', { text: 'Temperature' }),
+    chipRow(STATE.prefs.tempUnit, [
+      { value: 'f', label: '°Fahrenheit' },
+      { value: 'c', label: '°Celsius' }
+    ], function(v){ STATE.prefs.tempUnit = v; })
+  ]));
+
+  dialog.appendChild(body);
+}
+
+function openSettings(){
+  renderSettings();
+  document.getElementById('settings-dialog').showModal();
 }
 
 // ---------- Tutorial ----------
@@ -1619,12 +1704,14 @@ function renderBaseList(){
   });
 }
 
-var openSwipeRow = null;
-
+// Swiping a base list item reveals a full-width red "Delete" backing behind
+// it (attachSwipeToDelete puts contentEl on top, swipe-delete-action fills
+// the whole row underneath). There's no partial "reveal a button" state —
+// falling short of FULL_SWIPE_RATIO just snaps back closed, and crossing it
+// deletes directly (still behind the usual confirmation dialog).
 function attachSwipeToDelete(rowEl, contentEl, onTap, onFullSwipe){
-  var OPEN_X = 76;
   var FULL_SWIPE_RATIO = 0.6;
-  var startX = 0, startY = 0, dx = 0, dragging = false, decided = false, isHorizontal = false, open = false;
+  var startX = 0, startY = 0, dx = 0, dragging = false, decided = false, isHorizontal = false;
 
   function setX(x, animate){
     contentEl.style.transition = animate ? 'transform .18s ease' : 'none';
@@ -1632,10 +1719,7 @@ function attachSwipeToDelete(rowEl, contentEl, onTap, onFullSwipe){
   }
   function close(animate){
     setX(0, animate !== false);
-    open = false;
-    if (openSwipeRow === closer) openSwipeRow = null;
   }
-  var closer = { close: close };
 
   rowEl.addEventListener('pointerdown', function(e){
     if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -1650,39 +1734,27 @@ function attachSwipeToDelete(rowEl, contentEl, onTap, onFullSwipe){
       isHorizontal = Math.abs(moveX) > Math.abs(moveY);
       if (isHorizontal){
         try { rowEl.setPointerCapture(e.pointerId); } catch (err){}
-        if (openSwipeRow && openSwipeRow !== closer) openSwipeRow.close();
       }
     }
     if (!isHorizontal) return;
     e.preventDefault();
     dx = moveX;
-    var base = open ? OPEN_X : 0;
     var rowWidth = rowEl.getBoundingClientRect().width;
-    setX(Math.max(0, Math.min(rowWidth, base + dx)), false);
+    setX(Math.max(0, Math.min(rowWidth, dx)), false);
   });
   function endDrag(){
     if (!dragging) return;
     dragging = false;
     if (!isHorizontal) return;
-    var base = open ? OPEN_X : 0;
     var rowWidth = rowEl.getBoundingClientRect().width;
-    var finalX = Math.max(0, Math.min(rowWidth, base + dx));
-    if (finalX >= rowWidth * FULL_SWIPE_RATIO){
-      close(true);
-      onFullSwipe();
-    } else if (finalX >= OPEN_X / 2){
-      setX(OPEN_X, true); open = true; openSwipeRow = closer;
-    } else {
-      close(true);
-    }
+    var finalX = Math.max(0, Math.min(rowWidth, dx));
+    close(true);
+    if (finalX >= rowWidth * FULL_SWIPE_RATIO) onFullSwipe();
   }
   rowEl.addEventListener('pointerup', endDrag);
   rowEl.addEventListener('pointercancel', endDrag);
 
-  contentEl.addEventListener('click', function(e){
-    if (open){ e.preventDefault(); e.stopPropagation(); close(true); return; }
-    onTap();
-  });
+  contentEl.addEventListener('click', onTap);
 }
 
 function renderItemSummaryRow(item){
@@ -1704,10 +1776,7 @@ function renderItemSummaryRow(item){
   ]);
 
   var deleteAction = el('div', { class: 'swipe-delete-action' }, [
-    el('button', {
-      class: 'swipe-delete-btn', type: 'button', text: 'Delete',
-      onclick: function(e){ e.stopPropagation(); deleteBaseListItem(item); }
-    })
+    el('span', { class: 'swipe-delete-label', text: 'Delete' })
   ]);
 
   var row = el('li', { class: 'item-row edit-summary-row swipeable' }, [ deleteAction, content ]);
@@ -1928,7 +1997,10 @@ function boot(){
         '<button class="tab" data-tab="plans">Saved Trips</button>' +
         '<button class="tab" data-tab="baselist">Base List</button>' +
       '</nav>' +
-      '<div class="sync-status" id="sync-status"></div>' +
+      '<div class="topbar-actions">' +
+        '<div class="sync-status" id="sync-status"></div>' +
+        '<button id="settings-btn" class="icon-btn" type="button" title="Settings">⚙️</button>' +
+      '</div>' +
     '</header>' +
     (IS_DEMO ?
       '<div class="demo-banner">' +
@@ -1944,7 +2016,8 @@ function boot(){
     '<dialog id="prompt-dialog" class="item-dialog prompt-dialog"></dialog>' +
     '<dialog id="celebrate-dialog" class="celebrate-dialog"></dialog>' +
     '<dialog id="weather-dialog" class="item-dialog weather-dialog"></dialog>' +
-    '<dialog id="tutorial-dialog" class="item-dialog tutorial-dialog"></dialog>';
+    '<dialog id="tutorial-dialog" class="item-dialog tutorial-dialog"></dialog>' +
+    '<dialog id="settings-dialog" class="item-dialog"></dialog>';
 
   document.querySelectorAll('.tab').forEach(function(b){
     b.addEventListener('click', function(){ switchTab(b.getAttribute('data-tab')); });
@@ -1953,6 +2026,12 @@ function boot(){
   if (IS_DEMO) document.getElementById('demo-reset-btn').addEventListener('click', resetDemo);
 
   document.getElementById('item-dialog').addEventListener('close', function(){ renderBaseList(); });
+  document.getElementById('settings-btn').addEventListener('click', openSettings);
+
+  if (!STATE.activePlanId){
+    var nextPlan = pickNextUpcomingPlan();
+    if (nextPlan) loadPlan(nextPlan.id);
+  }
 
   renderPlan();
   renderBaseList();
