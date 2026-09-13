@@ -70,7 +70,7 @@ a{color:var(--accent);}
 }
 .demo-banner .btn{flex-shrink:0;}
 .brand{display:flex;align-items:center;gap:12px;}
-.brand-mark{width:40px;height:40px;flex-shrink:0;border-radius:9px;display:block;}
+.brand-mark{width:40px;height:40px;flex-shrink:0;display:block;}
 .brand h1{font-size:30px;font-weight:600;letter-spacing:-0.01em;}
 .eyebrow{
   margin:2px 0 0;font-size:12.5px;letter-spacing:0.12em;text-transform:uppercase;
@@ -377,8 +377,8 @@ details.more[open] summary:before{content:"– ";}
 .empty-hint{color:var(--muted);font-size:15px;padding:24px;text-align:center;}
 
 /* ---------- Tutorial ---------- */
-.tutorial-dialog{width:min(380px,90vw);}
-.tutorial-body{padding:28px 24px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;}
+.tutorial-dialog{width:min(380px,90vw);touch-action:pan-y;}
+.tutorial-body{padding:28px 24px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:350px;box-sizing:border-box;}
 .tutorial-body h2{font-size:21px;}
 .tutorial-icon{font-size:44px;line-height:1;}
 .tutorial-body .confirm-message{text-align:center;}
